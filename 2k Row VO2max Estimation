@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VO₂max Calculator</title>
+
+<style>
+body {
+font-family: Arial, sans-serif;
+padding: 20px;
+max-width: 500px;
+margin: auto;
+}
+label {
+display: block;
+margin-top: 15px;
+font-weight: bold;
+}
+input, select {
+width: 100%;
+font-size: 1.1em;
+padding: 8px;
+margin-top: 5px;
+}
+.result {
+margin-top: 25px;
+font-size: 1.4em;
+font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<h2>VO₂max Estimation</h2>
+
+<label>2 km Row Time (seconds)</label>
+<input type="number" id="time" placeholder="e.g., 420" oninput="calculate()">
+
+<label>Sex</label>
+<select id="sex" onchange="calculate()">
+<option value="">Select</option>
+<option value="0">Male</option>
+<option value="1">Female</option>
+</select>
+
+<label>Body Mass Index (BMI)</label>
+<input type="number" step="0.1" id="bmi" placeholder="e.g., 24.5" oninput="calculate()">
+
+<div class="result">
+VO₂max: <span id="output">—</span>
+</div>
+
+<script>
+function calculate() {
+const time = parseFloat(document.getElementById("time").value);
+const sex = parseFloat(document.getElementById("sex").value);
+const bmi = parseFloat(document.getElementById("bmi").value);
+
+if (isNaN(time) || isNaN(sex) || isNaN(bmi)) {
+document.getElementById("output").textContent = "—";
+return;
+}
+
+const vo2max =
+133.051 -
+(0.086 * time) -
+(8.289 * sex) -
+(1.433 * bmi);
+
+document.getElementById("output").textContent =
+vo2max.toFixed(1) + " ml·kg⁻¹·min⁻¹";
+}
+</script>
+
+</body>
+</html>
