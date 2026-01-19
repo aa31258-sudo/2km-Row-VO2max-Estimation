@@ -17,103 +17,25 @@ input, select { width: 100%; font-size: 1.1em; padding: 10px; margin-top: 6px; b
 .warn { margin-top: 10px; color: #b00020; font-weight: bold; }
 .ok { margin-top: 10px; color: #0b6b0b; font-weight: bold; }
 .divider { margin-top: 18px; border-top: 1px solid #ddd; padding-top: 14px; }
-.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
 </style>
 </head>
 
 <body>
 <h2>VO₂max Estimation (2 km Row)</h2>
 
-<label>2 km Row Time (minutes:seconds)</label>
-<input id="time" placeholder="e.g., 7:00 or 08:35" inputmode="numeric" oninput="calculate()" />
-<div class="note">Format: <span class="mono">m:ss</span> or <span class="mono">mm:ss</span> (seconds must be 00–59)</div>
-
-<label>Sex</label>
-<select id="sex" onchange="calculate()">
-<option value="">Select</option>
-<option value="0">Male</option>
-<option value="1">Female</option>
-</select>
-<div class="note">Internally coded as Male = 0, Female = 1</div>
-
-<div class="divider"></div>
-
-<label>Body Size</label>
-
+<!-- TIME INPUT (MINUTES + SECONDS) -->
+<label>2 km Row Time</label>
 <div class="row">
 <div>
-<label style="margin-top:0;">Weight</label>
-<input id="weight" type="number" step="0.1" placeholder="e.g., 180" oninput="calculate()" />
+<label style="margin-top:0;">Minutes</label>
+<input id="timeMin" type="number" inputmode="numeric" min="0" step="1" placeholder="e.g., 7" oninput="calculate()">
 </div>
 <div>
-<label style="margin-top:0;">Weight Units</label>
-<select id="weightUnit" onchange="calculate()">
-<option value="lb">lb</option>
-<option value="kg">kg</option>
-</select>
+<label style="margin-top:0;">Seconds</label>
+<input id="timeSec" type="number" inputmode="numeric" min="0" max="59" step="1" placeholder="e.g., 0" oninput="calculate()">
 </div>
 </div>
-
-<div class="row" style="margin-top: 8px;">
-<div>
-<label style="margin-top:0;">Height</label>
-<input id="height1" type="number" step="0.1" placeholder="e.g., 5" oninput="calculate()" />
-</div>
-<div id="height2Wrap">
-<label style="margin-top:0;">(inches)</label>
-<input id="height2" type="number" step="0.1" placeholder="e.g., 10" oninput="calculate()" />
-</div>
-<div>
-<label style="margin-top:0;">Height Units</label>
-<select id="heightUnit" onchange="handleHeightUnitChange(); calculate();">
-<option value="ftin">ft + in</option>
-<option value="cm">cm</option>
-<option value="m">m</option>
-</select>
-</div>
-</div>
-
-<div id="messages"></div>
-
-<div class="result">VO₂max: <span id="output">—</span></div>
-<div class="subresult">BMI (calculated): <span id="bmiOut">—</span></div>
-<div class="subresult">Time (seconds): <span id="secOut">—</span></div>
-
-<script>
-function handleHeightUnitChange() {
-const unit = document.getElementById("heightUnit").value;
-const h2 = document.getElementById("height2Wrap");
-const h1 = document.getElementById("height1");
-
-if (unit === "ftin") {
-h2.style.display = "block";
-h1.placeholder = "e.g., 5";
-document.querySelector('#height2Wrap label').textContent = "(inches)";
-document.getElementById("height2").placeholder = "e.g., 10";
-} else {
-h2.style.display = "none";
-if (unit === "cm") h1.placeholder = "e.g., 178";
-if (unit === "m") h1.placeholder = "e.g., 1.78";
-}
-}
-
-function parseTimeToSeconds(s) {
-// Accepts m:ss or mm:ss
-if (!s) return NaN;
-const trimmed = String(s).trim();
-const parts = trimmed.split(":");
-if (parts.length !== 2) return NaN;
-
-const minutes = parseInt(parts[0], 10);
-const seconds = parseInt(parts[1], 10);
-
-if (!Number.isFinite(minutes) || !Number.isFinite(seconds)) return NaN;
-if (minutes < 0) return NaN;
-if (seconds < 0 || seconds > 59) return NaN;
-
-return (minutes * 60) + seconds;
-}
-
+<div class="note">Seconds must be 0–59.</div>
 function toKg(weight, unit) {
 if (!Number.isFinite(weight) || weight <= 0) return NaN;
 return unit === "lb" ? (weight * 0.45359237) : weight;
@@ -139,51 +61,64 @@ function calculate() {
 const msg = document.getElementById("messages");
 msg.innerHTML = "";
 
-const timeStr = document.getElementById("time").value;
-const tSec = parseTimeToSeconds(timeStr);
+// --- TIME: minutes + seconds -> total seconds ---
+const minVal = parseInt(document.getElementById("timeMin").value, 10);
+const secVal = parseInt(document.getElementById("timeSec").value, 10);
 
+const minutes = Number.isFinite(minVal) ? minVal : NaN;
+const seconds = Number.isFinite(secVal) ? secVal : NaN;
+
+const tSec = (Number.isFinite(minutes) && Number.isFinite(seconds))
+? (minutes * 60 + seconds)
+: NaN;
+
+// Sex
 const sex = parseFloat(document.getElementById("sex").value);
 
+// Weight
 const wVal = parseFloat(document.getElementById("weight").value);
 const wUnit = document.getElementById("weightUnit").value;
 const kg = toKg(wVal, wUnit);
 
+// Height
 const hUnit = document.getElementById("heightUnit").value;
 const h1 = parseFloat(document.getElementById("height1").value);
 const h2 = parseFloat(document.getElementById("height2").value);
 const meters = heightToMeters(h1, h2, hUnit);
 
-// Update secondary outputs even if incomplete
-document.getElementById("secOut").textContent = Number.isFinite(tSec) ? tSec.toString() : "—";
+// Validate time first (and show seconds)
+if (!Number.isFinite(tSec) || minutes < 0 || seconds < 0 || seconds > 59) {
+document.getElementById("secOut").textContent = "—";
+document.getElementById("bmiOut").textContent = "—";
+document.getElementById("output").textContent = "—";
+msg.innerHTML = `<div class="warn">Enter valid time (minutes ≥ 0, seconds 0–59).</div>`;
+return;
+}
+document.getElementById("secOut").textContent = tSec.toString();
 
+// Validate sex
+if (!Number.isFinite(sex)) {
+document.getElementById("bmiOut").textContent = "—";
+document.getElementById("output").textContent = "—";
+msg.innerHTML = `<div class="warn">Select sex.</div>`;
+return;
+}
+
+// Calculate BMI
 let bmi = NaN;
 if (Number.isFinite(kg) && Number.isFinite(meters) && meters > 0) {
 bmi = kg / (meters * meters);
 document.getElementById("bmiOut").textContent = bmi.toFixed(1);
 } else {
 document.getElementById("bmiOut").textContent = "—";
-}
-
-// Validate minimum requirements
-if (!Number.isFinite(tSec)) {
-msg.innerHTML = `<div class="warn">Enter time as minutes:seconds (e.g., 7:00).</div>`;
 document.getElementById("output").textContent = "—";
-return;
-}
-if (!Number.isFinite(sex)) {
-msg.innerHTML = `<div class="warn">Select sex.</div>`;
-document.getElementById("output").textContent = "—";
-return;
-}
-if (!Number.isFinite(bmi)) {
 msg.innerHTML = `<div class="warn">Enter valid weight and height.</div>`;
-document.getElementById("output").textContent = "—";
 return;
 }
 
 // VO2max equation:
 // VO2max = 133.051 - (0.086*row_time_seconds) - (8.289*sex) - (1.433*BMI)
-const vo2max = 133.051 - (0.086 * tSec) - (8.289 * sex) - (1.443 * bmi);
+const vo2max = 133.051 - (0.086 * tSec) - (8.289 * sex) - (1.433 * bmi);
 
 document.getElementById("output").textContent = vo2max.toFixed(2) + " ml·kg⁻¹·min⁻¹";
 msg.innerHTML = `<div class="ok">Calculated.</div>`;
@@ -194,4 +129,3 @@ handleHeightUnitChange();
 </script>
 </body>
 </html>
-
