@@ -183,7 +183,7 @@ return;
 
 // VO2max equation:
 // VO2max = 133.051 - (0.086*row_time_seconds) - (8.289*sex) - (1.433*BMI)
-const vo2max = 133.051 - (0.086 * tSec) - (8.289 * sex) - (1.433 * bmi);
+const vo2max = 133.051 - (0.086 * tSec) - (8.289 * sex) - (1.443 * bmi);
 
 document.getElementById("output").textContent = vo2max.toFixed(2) + " ml·kg⁻¹·min⁻¹";
 msg.innerHTML = `<div class="ok">Calculated.</div>`;
